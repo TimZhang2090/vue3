@@ -592,6 +592,7 @@ export function isStatefulComponent(instance: ComponentInternalInstance) {
 
 export let isInSSRComponentSetup = false
 
+// #tim-core
 export function setupComponent(
   instance: ComponentInternalInstance,
   isSSR = false
@@ -600,6 +601,8 @@ export function setupComponent(
 
   const { props, children } = instance.vnode
   const isStateful = isStatefulComponent(instance)
+
+  // #tim 初始化了 props 和 slots
   initProps(instance, props, isStateful, isSSR)
   initSlots(instance, children)
 
@@ -648,6 +651,8 @@ function setupStatefulComponent(
   if (__DEV__) {
     exposePropsOnRenderContext(instance)
   }
+
+  // #tim-core 获取我们书写的组件的 setup
   // 2. call setup()
   const { setup } = Component
   if (setup) {

@@ -41,7 +41,12 @@ let enabledHydration = false
 
 function ensureRenderer() {
   return (
+    // #tim 缓存了 renderer
     renderer ||
+    // #tim 节点的操作方法来自于 patchProp 和 nodeOps
+    // 即 runtime-dom 定义了操作浏览器 dom 的方法
+    // 而 runtime-core/renderer.ts/createRenderer 可以接受任何自定义的节点操作方法
+    // 从而实现了——自定义渲染器，以及 runtime-dom 和 runtime-core 的解耦
     (renderer = createRenderer<Node, Element | ShadowRoot>(rendererOptions))
   )
 }
@@ -71,7 +76,10 @@ export const createApp = ((...args) => {
     injectCompilerOptionsCheck(app)
   }
 
+  // #tim 暂存 apiCreateApp 提供的通用 mount 方法
   const { mount } = app
+
+  // #tim 重写 mount
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
     const container = normalizeContainer(containerOrSelector)
     if (!container) return
@@ -100,6 +108,7 @@ export const createApp = ((...args) => {
 
     // clear content before mounting
     container.innerHTML = ''
+    // #tim 执行通用 mount
     const proxy = mount(container, false, container instanceof SVGElement)
     if (container instanceof Element) {
       container.removeAttribute('v-cloak')

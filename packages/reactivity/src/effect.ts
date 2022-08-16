@@ -50,6 +50,7 @@ export let activeEffect: ReactiveEffect | undefined
 export const ITERATE_KEY = Symbol(__DEV__ ? 'iterate' : '')
 export const MAP_KEY_ITERATE_KEY = Symbol(__DEV__ ? 'Map key iterate' : '')
 
+// #tim-core
 export class ReactiveEffect<T = any> {
   active = true
   deps: Dep[] = []
@@ -97,6 +98,7 @@ export class ReactiveEffect<T = any> {
     }
     try {
       this.parent = activeEffect
+      // #tim 注册依赖
       activeEffect = this
       shouldTrack = true
 

@@ -178,6 +178,7 @@ export function createAppAPI<HostElement>(
   render: RootRenderFunction,
   hydrate?: RootHydrateFunction
 ): CreateAppFunction<HostElement> {
+  // #tim app实例 下 mount、unmount 等各种 API 实现于此
   return function createApp(rootComponent, rootProps = null) {
     if (!isFunction(rootComponent)) {
       rootComponent = { ...rootComponent }
@@ -292,6 +293,8 @@ export function createAppAPI<HostElement>(
                 ` you need to unmount the previous app by calling \`app.unmount()\` first.`
             )
           }
+
+          // #tim-core
           const vnode = createVNode(
             rootComponent as ConcreteComponent,
             rootProps

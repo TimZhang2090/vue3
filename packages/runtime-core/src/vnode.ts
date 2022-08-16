@@ -553,6 +553,7 @@ function _createVNode(
     }
   }
 
+  // #tim 确定节点类型的 bit 表示
   // encode the vnode type information into a bitmap
   const shapeFlag = isString(type)
     ? ShapeFlags.ELEMENT

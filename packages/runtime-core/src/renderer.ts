@@ -317,6 +317,7 @@ function baseCreateRenderer(
   createHydrationFns: typeof createHydrationFunctions
 ): HydrationRenderer
 
+// #tim-core 这两千多行，是渲染的核心代码逻辑
 // implementation
 function baseCreateRenderer(
   options: RendererOptions,
@@ -407,6 +408,7 @@ function baseCreateRenderer(
         )
         break
       default:
+        // #tim 应用位运算，快速判断操作类型
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(
             n1,
@@ -1151,7 +1153,9 @@ function baseCreateRenderer(
   }
 
   const processComponent = (
+    // #tim 旧
     n1: VNode | null,
+    // #tim 新
     n2: VNode,
     container: RendererElement,
     anchor: RendererNode | null,
@@ -1172,6 +1176,7 @@ function baseCreateRenderer(
           optimized
         )
       } else {
+        // #tim 旧的为 null，直接挂载
         mountComponent(
           n2,
           container,
@@ -1183,6 +1188,7 @@ function baseCreateRenderer(
         )
       }
     } else {
+      // #tim 旧的存在，更新组件
       updateComponent(n1, n2, optimized)
     }
   }
@@ -1307,6 +1313,7 @@ function baseCreateRenderer(
     optimized
   ) => {
     const componentUpdateFn = () => {
+      // #tim 首次渲染(执行patch,产生真实dom)
       if (!instance.isMounted) {
         let vnodeHook: VNodeHook | null | undefined
         const { el, props } = initialVNode
