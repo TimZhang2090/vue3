@@ -1303,6 +1303,7 @@ function baseCreateRenderer(
     }
   }
 
+  // #tim-core
   const setupRenderEffect: SetupRenderEffectFn = (
     instance,
     initialVNode,
@@ -1762,6 +1763,7 @@ function baseCreateRenderer(
     }
   }
 
+  // #tim-core
   // can be all-keyed or mixed
   const patchKeyedChildren = (
     c1: VNode[],
