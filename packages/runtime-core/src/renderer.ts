@@ -1206,6 +1206,8 @@ function baseCreateRenderer(
     // mounting
     const compatMountInstance =
       __COMPAT__ && initialVNode.isCompatRoot && initialVNode.component
+
+    // #tim 创建组件实例
     const instance: ComponentInternalInstance =
       compatMountInstance ||
       (initialVNode.component = createComponentInstance(
@@ -1233,6 +1235,8 @@ function baseCreateRenderer(
       if (__DEV__) {
         startMeasure(instance, `init`)
       }
+
+      // #tim 安装组件
       setupComponent(instance)
       if (__DEV__) {
         endMeasure(instance, `init`)
@@ -1253,6 +1257,7 @@ function baseCreateRenderer(
       return
     }
 
+    // #tim 构建响应机制
     setupRenderEffect(
       instance,
       initialVNode,
@@ -2338,6 +2343,7 @@ function baseCreateRenderer(
         unmount(container._vnode, null, null, true)
       }
     } else {
+      // #tim-core
       patch(container._vnode || null, vnode, container, null, null, null, isSVG)
     }
     flushPreFlushCbs()

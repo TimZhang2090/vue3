@@ -1,0 +1,26 @@
+<html>
+    <!-- <script src="http://unpkg.com/vue@latest"></script> -->
+    <script src="../../dist/vue.global.js"></script>
+    <body>
+        <div id="app">
+            <h1>
+                {{ name }}
+            </h1>
+        </div>
+    </body>
+
+    <script>
+        const { createApp, ref, watchEffect } = Vue
+
+        createApp({
+            setup() {
+                // 未实现响应式
+                const name = ref('tim')
+                
+                return {
+                    name
+                }
+            }
+        }).mount('#app')
+    </script>
+</html>

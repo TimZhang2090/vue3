@@ -90,6 +90,7 @@ export const createApp = ((...args) => {
       // Reason: potential execution of JS expressions in in-DOM template.
       // The user must make sure the in-DOM template is trusted. If it's
       // rendered by the server, the template should not contain any user data.
+      // #tim 没配置 render 也没配置 template，就直接从 container 中取
       component.template = container.innerHTML
       // 2.x compat check
       if (__COMPAT__ && __DEV__) {
