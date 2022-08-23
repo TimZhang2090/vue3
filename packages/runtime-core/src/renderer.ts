@@ -643,8 +643,10 @@ function baseCreateRenderer(
       // mount children first, since some props may rely on child content
       // being already rendered, e.g. `<select value>`
       if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        // #tim 直接插入文本
         hostSetElementText(el, vnode.children as string)
       } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // #tim 子元素不是文本，就要循环 patch 子元素了
         mountChildren(
           vnode.children as VNodeArrayChildren,
           el,

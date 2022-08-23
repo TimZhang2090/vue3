@@ -48,6 +48,7 @@ function compileToFunction(
     warnDeprecation(DeprecationTypes.CONFIG_WHITESPACE, null)
   }
 
+  // #tim-模板编译入口
   const { code } = compile(
     template,
     extend(
