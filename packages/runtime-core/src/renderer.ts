@@ -1564,6 +1564,13 @@ function baseCreateRenderer(
       }
     }
 
+    // Vue3 从 effect 函数 到 ReactiveEffect 类的重构过程
+    // 内存使用量减少约 17%
+    // https://github.com/vuejs/core/pull/4001
+
+    // 切回旧的写法，查看 setupRenderEffect
+    // git co 63a51ffcab3409382df0ce2c65caf50bb7517bbf
+
     // create reactive effect for rendering
     const effect = (instance.effect = new ReactiveEffect(
       componentUpdateFn,
