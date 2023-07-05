@@ -271,7 +271,11 @@ export const enum MoveType {
 }
 
 export const queuePostRenderEffect = __FEATURE_SUSPENSE__
-  ? queueEffectWithSuspense
+  ? __TEST__
+    ? // vitest can't seem to handle eager circular dependency
+      (fn: Function | Function[], suspense: SuspenseBoundary | null) =>
+        queueEffectWithSuspense(fn, suspense)
+    : queueEffectWithSuspense
   : queuePostFlushCb
 
 /**
@@ -835,7 +839,8 @@ function baseCreateRenderer(
         areChildrenSVG,
         slotScopeIds
       )
-      if (__DEV__ && parentComponent && parentComponent.type.__hmrId) {
+      if (__DEV__) {
+        // necessary for HMR
         traverseStaticChildren(n1, n2)
       }
     } else if (!optimized) {
@@ -1110,7 +1115,8 @@ function baseCreateRenderer(
           isSVG,
           slotScopeIds
         )
-        if (__DEV__ && parentComponent && parentComponent.type.__hmrId) {
+        if (__DEV__) {
+          // necessary for HMR
           traverseStaticChildren(n1, n2)
         } else if (
           // #2080 if the stable fragment has a key, it's a <template v-for> that may
