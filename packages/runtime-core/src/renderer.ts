@@ -1189,6 +1189,10 @@ function baseCreateRenderer(
     }
   }
 
+  // #tim 做三件事
+  // 1. 创建组件实例
+  // 2. 设置组件实例
+  // 3. 设置并运行带副作用的渲染函数
   const mountComponent: MountComponentFn = (
     initialVNode,
     container,
@@ -1203,7 +1207,8 @@ function baseCreateRenderer(
     const compatMountInstance =
       __COMPAT__ && initialVNode.isCompatRoot && initialVNode.component
 
-    // #tim 创建组件实例
+    // #tim 做三件事
+    // 1. 创建组件实例
     const instance: ComponentInternalInstance =
       compatMountInstance ||
       (initialVNode.component = createComponentInstance(
@@ -1232,7 +1237,8 @@ function baseCreateRenderer(
         startMeasure(instance, `init`)
       }
 
-      // #tim 安装组件
+      // #tim 做三件事
+      // 2. 设置组件实例，安装组件
       setupComponent(instance)
       if (__DEV__) {
         endMeasure(instance, `init`)
@@ -1253,7 +1259,8 @@ function baseCreateRenderer(
       return
     }
 
-    // #tim 构建响应机制
+    // #tim 做三件事
+    // 3. 设置并运行带副作用的渲染函数，构建响应机制
     setupRenderEffect(
       instance,
       initialVNode,
@@ -2343,14 +2350,18 @@ function baseCreateRenderer(
   const render: RootRenderFunction = (vnode, container, isSVG) => {
     if (vnode == null) {
       if (container._vnode) {
+        // #tim 销毁组件
         unmount(container._vnode, null, null, true)
       }
     } else {
       // #tim-core
+      // 创建或者更新组件
       patch(container._vnode || null, vnode, container, null, null, null, isSVG)
     }
     flushPreFlushCbs()
     flushPostFlushCbs()
+
+    // #tim 缓存 vnode 节点
     container._vnode = vnode
   }
 
