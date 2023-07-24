@@ -75,21 +75,25 @@ export const createApp = ((...args) => {
     injectCompilerOptionsCheck(app)
   }
 
-  // #tim 暂存 apiCreateApp 提供的通用 mount 方法
+  // #tim 暂存 apiCreateApp.ts 提供的通用 mount 方法
+  // 这个 mount 方法是一个 相对通用 的，跨平台的 mount 方法
   const { mount } = app
 
   // #tim 重写 mount
+  // 重写的 mount 是对原 mount 方法的包装，是一个 web、DOM 相关的 mount 方法
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
     const container = normalizeContainer(containerOrSelector)
     if (!container) return
 
     const component = app._component
+
+    // #tim 没有提供 render 函数，也没提供 template 模板，就取 innerHTML 作为模板内容
+    // #tim 没配置 render 也没配置 template，就直接从 container 中取
     if (!isFunction(component) && !component.render && !component.template) {
       // __UNSAFE__
       // Reason: potential execution of JS expressions in in-DOM template.
       // The user must make sure the in-DOM template is trusted. If it's
       // rendered by the server, the template should not contain any user data.
-      // #tim 没配置 render 也没配置 template，就直接从 container 中取
       component.template = container.innerHTML
       // 2.x compat check
       if (__COMPAT__ && __DEV__) {
