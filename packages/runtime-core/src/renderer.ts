@@ -1298,6 +1298,9 @@ function baseCreateRenderer(
       } else {
         // normal update
         instance.next = n2
+
+        // #tim 子组件的 更新effectFn 也可能因为数据变化而被添加到更新队列中
+        // 移除它们防止对一个子组件的重复更新
         // in case the child component is also queued, remove it to avoid
         // double updating the same child component in the same flush.
         invalidateJob(instance.update)
@@ -1680,6 +1683,7 @@ function baseCreateRenderer(
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         // prev children was array
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // #tim 全面 diff
           // two arrays, cannot assume anything, do full diff
           patchKeyedChildren(
             c1 as VNode[],
@@ -1849,6 +1853,7 @@ function baseCreateRenderer(
       e2--
     }
 
+    // #tim 新节点有剩余，需要被添加
     // 3. common sequence + mount
     // (a b)
     // (a b) c
@@ -1879,6 +1884,7 @@ function baseCreateRenderer(
       }
     }
 
+    // #tim 旧节点有剩余，需要被删除
     // 4. common sequence + unmount
     // (a b) c
     // (a b)
@@ -1902,6 +1908,8 @@ function baseCreateRenderer(
       const s2 = i // next starting index
 
       // 5.1 build key:index map for newChildren
+      // #tim 建立在新 节点序列中，新节点 key 到 新节点位置 index 的映射
+      // 这样在倒序遍历 旧节点序列 时，就可以通过 O(1) 的复杂度，快速知道某个节点在 新序列 中的位置了
       const keyToNewIndexMap: Map<string | number | symbol, number> = new Map()
       for (i = s2; i <= e2; i++) {
         const nextChild = (c2[i] = optimized
@@ -1924,9 +1932,15 @@ function baseCreateRenderer(
       let j
       let patched = 0
       const toBePatched = e2 - s2 + 1
+
       let moved = false
       // used to track whether any node has moved
       let maxNewIndexSoFar = 0
+
+      // #tim 掐头去尾后，新序列剩下 中间一截，以这截的长度，建立一个新数组
+      // 用于映射这些节点，在旧序列中的位置（注意是 index + 1）
+      // 偏移一位，是为了把 0 作为特殊初始标记，表示新序列中这个节点在旧序列中没有，方便之后直接做新增
+
       // works as Map<newIndex, oldIndex>
       // Note that oldIndex is offset by +1
       // and oldIndex = 0 is a special value indicating the new node has
@@ -1935,13 +1949,20 @@ function baseCreateRenderer(
       const newIndexToOldIndexMap = new Array(toBePatched)
       for (i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0
 
+      // #tim 正序遍历 旧节点序列
       for (i = s1; i <= e1; i++) {
         const prevChild = c1[i]
+
+        // #tim 假设旧序列超级长，新序列只有几个节点
+        // 现在正在遍历旧序列，好巧不巧，遍历的头几个，在 新序列中都有，很快，和 新序列 的对比已经做完了
+        // 之后有 patched++ ，来表示处理了几个
+        // 那么，这里就可以提前退出了，接着再遍历旧序列，只要删除对应 DOM 就可以了
         if (patched >= toBePatched) {
           // all new children have been patched so this can only be a removal
           unmount(prevChild, parentComponent, parentSuspense, true)
           continue
         }
+
         let newIndex
         if (prevChild.key != null) {
           newIndex = keyToNewIndexMap.get(prevChild.key)
@@ -1957,15 +1978,25 @@ function baseCreateRenderer(
             }
           }
         }
+
+        // #tim 在新序列中，找不到旧序列中的某个节点，所以删除对应 DOM
         if (newIndex === undefined) {
           unmount(prevChild, parentComponent, parentSuspense, true)
         } else {
+          // #tim 更新映射
           newIndexToOldIndexMap[newIndex - s2] = i + 1
+
+          // #tim 现在正在遍历 旧序列 嘛
+          // 然后，对应节点在 新序列 中，也是递增的，那么就不用移动
+          // 反之，应当移动
+          // 只要有一次不是递增的情况，就是发生了`移动`
           if (newIndex >= maxNewIndexSoFar) {
             maxNewIndexSoFar = newIndex
           } else {
             moved = true
           }
+
+          // #tim 对节点本身做更新
           patch(
             prevChild,
             c2[newIndex] as VNode,
@@ -1977,22 +2008,33 @@ function baseCreateRenderer(
             slotScopeIds,
             optimized
           )
+
           patched++
         }
       }
+
+      // #tim 注意上面已经 patch 过了，
+      // 所以 新序列中的那一截，包含了对 DOM 的应用了，只是顺序不一一对应
+      // 那么 新序列 中的顺序，就是 DOM 序列要调整成的顺序
 
       // 5.3 move and mount
       // generate longest stable subsequence only when nodes have moved
       const increasingNewIndexSequence = moved
         ? getSequence(newIndexToOldIndexMap)
         : EMPTY_ARR
+
       j = increasingNewIndexSequence.length - 1
+
+      // #tim 倒序遍历 新序列 中的 那一截
       // looping backwards so that we can use last patched node as anchor
       for (i = toBePatched - 1; i >= 0; i--) {
         const nextIndex = s2 + i
         const nextChild = c2[nextIndex] as VNode
+
         const anchor =
           nextIndex + 1 < l2 ? (c2[nextIndex + 1] as VNode).el : parentAnchor
+
+        // #tim 映射值为初始值 0，则新增
         if (newIndexToOldIndexMap[i] === 0) {
           // mount new
           patch(
@@ -2007,12 +2049,17 @@ function baseCreateRenderer(
             optimized
           )
         } else if (moved) {
+          // #tim
+          // 没有 最长递增子序列，则移动，reverse 后就没有 最长递增子序列
+          // 不在 最长递增子序列 中，则移动
+
           // move if:
           // There is no stable subsequence (e.g. a reverse)
           // OR current node is not among the stable sequence
           if (j < 0 || i !== increasingNewIndexSequence[j]) {
             move(nextChild, container, anchor, MoveType.REORDER)
           } else {
+            // #tim 在 最长递增子序列 中，则倒序向前跳过
             j--
           }
         }
