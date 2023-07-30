@@ -100,6 +100,7 @@ function createGetter(isReadonly = false, shallow = false) {
     } else if (key === ReactiveFlags.IS_SHALLOW) {
       return shallow
     } else if (
+      // #tim 返回被代理的原始对象
       key === ReactiveFlags.RAW &&
       receiver ===
         (isReadonly
@@ -182,11 +183,29 @@ function createSetter(shallow = false) {
       // in shallow mode, objects are set as-is regardless of reactive or not
     }
 
+    // #tim 对象新增属性，或重新设置已有属性，都会被 set 拦截函数拦截
+    // 此处区分出是 新增属性 or 修改属性，并传入 trigger 中
+
+    // for ... in 是通过 ownKeys 来检测依赖何时发生的
+    // 属性的增删，应该重新执行副作用函数
+    // 属性的修改，则不应该响应变化，减少不必要的性能开销
+    // 所以 set 里调用 trigger ，需要知道属性到底是新增还是修改
+
+    // effect(() => {
+    //   // for ... in 循环
+    //   for(const key in proxyObj) {
+    //     console.log(key)
+    //   }
+    // })
+
     const hadKey =
       isArray(target) && isIntegerKey(key)
         ? Number(key) < target.length
         : hasOwn(target, key)
+
     const result = Reflect.set(target, key, value, receiver)
+
+    // #tim 屏蔽由原型对象的属性变化导致的更新
     // don't trigger if target is something up in the prototype chain of original
     if (target === toRaw(receiver)) {
       if (!hadKey) {

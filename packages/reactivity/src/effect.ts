@@ -340,6 +340,7 @@ export function trigger(
     switch (type) {
       case TriggerOpTypes.ADD:
         if (!isArray(target)) {
+          // #tim 属性增，影响 for...in 循环次数
           deps.push(depsMap.get(ITERATE_KEY))
           if (isMap(target)) {
             deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
@@ -351,6 +352,7 @@ export function trigger(
         break
       case TriggerOpTypes.DELETE:
         if (!isArray(target)) {
+          // #tim 属性减，影响 for...in 循环次数
           deps.push(depsMap.get(ITERATE_KEY))
           if (isMap(target)) {
             deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
