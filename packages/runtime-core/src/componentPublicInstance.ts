@@ -317,17 +317,23 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
       const n = accessCache![key]
       if (n !== undefined) {
         switch (n) {
+          // #tim 有缓存 数据类型，就直接去某种类型下找啦，不用再一层一层做 hasOwn 判断啦
           case AccessTypes.SETUP:
             return setupState[key]
           case AccessTypes.DATA:
+            // #tim 通过组件访问 data 属性
             return data[key]
+          // #tim ctx 包括了计算属性、组件方法等
           case AccessTypes.CONTEXT:
             return ctx[key]
+          // #tim 通过组件访问 pros 属性
           case AccessTypes.PROPS:
             return props![key]
           // default: just fallthrough
         }
       } else if (hasSetupBinding(setupState, key)) {
+        // #tim 注意这个顺序，先 SETUP 再 DATA 以及其他
+        // 也就是说：混合 setup 和 data,优先使用 setup 中数据
         accessCache![key] = AccessTypes.SETUP
         return setupState[key]
       } else if (data !== EMPTY_OBJ && hasOwn(data, key)) {

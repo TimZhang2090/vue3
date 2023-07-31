@@ -669,6 +669,7 @@ export function setupComponent(
   initProps(instance, props, isStateful, isSSR)
   initSlots(instance, children)
 
+  // #tim 设置有状态的组件实例
   const setupResult = isStateful
     ? setupStatefulComponent(instance, isSSR)
     : undefined
@@ -706,11 +707,20 @@ function setupStatefulComponent(
       )
     }
   }
+
   // 0. create render proxy property access cache
+  // #tim 用于 缓存访问过的数据的 属性类型(SETUP、DATA、CONTEXT、PROPS)
+  // 下次再方法，就不用执行 hasOwn 做判断了，提高性能
   instance.accessCache = Object.create(null)
+
   // 1. create public instance / render proxy
   // also mark it raw so it's never observed
-  // #tim 混合 setup 和 data,优先使用 setup 中数据 等
+  // #tim 创建渲染上下文代理
+  // 混合 setup 和 data,优先使用 setup 中数据 等
+
+  // 作用与 vue2 中给 vm 添加一个 _renderProxy 代理对象类似
+  // 方便直接访问 组件下的 setupState、data、props、ctx(包含组件方法) 等
+  // 方便劫持数据方法等，织入报错提示逻辑
   instance.proxy = markRaw(new Proxy(instance.ctx, PublicInstanceProxyHandlers))
   if (__DEV__) {
     exposePropsOnRenderContext(instance)
@@ -725,6 +735,8 @@ function setupStatefulComponent(
 
     setCurrentInstance(instance)
     pauseTracking()
+
+    // #tim 执行 setup 函数，获取执行结果
     const setupResult = callWithErrorHandling(
       setup,
       instance,
@@ -765,6 +777,7 @@ function setupStatefulComponent(
         )
       }
     } else {
+      // #tim 把 setup 中定义的 render、setupState 等挂载到 instance 下面
       handleSetupResult(instance, setupResult, isSSR)
     }
   } else {
