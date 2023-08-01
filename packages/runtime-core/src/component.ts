@@ -709,17 +709,20 @@ function setupStatefulComponent(
   }
 
   // 0. create render proxy property access cache
+
   // #tim 用于 缓存访问过的数据的 属性类型(SETUP、DATA、CONTEXT、PROPS)
   // 下次再方法，就不用执行 hasOwn 做判断了，提高性能
   instance.accessCache = Object.create(null)
 
   // 1. create public instance / render proxy
   // also mark it raw so it's never observed
+
   // #tim 创建渲染上下文代理
   // 混合 setup 和 data,优先使用 setup 中数据 等
 
   // 作用与 vue2 中给 vm 添加一个 _renderProxy 代理对象类似
   // 方便直接访问 组件下的 setupState、data、props、ctx(包含组件方法) 等
+  // 因为还要兼容 vue2 通过 this 访问各种数据的 API
   // 方便劫持数据方法等，织入报错提示逻辑
   instance.proxy = markRaw(new Proxy(instance.ctx, PublicInstanceProxyHandlers))
   if (__DEV__) {
@@ -730,6 +733,7 @@ function setupStatefulComponent(
   // 2. call setup()
   const { setup } = Component
   if (setup) {
+    // #tim setupContext 即 setup 函数的第二个参数: setup(props, {attrs, slots, emit, expose})
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null)
 
@@ -822,6 +826,7 @@ export function handleSetupResult(
       }`
     )
   }
+
   finishComponentSetup(instance, isSSR)
 }
 
@@ -903,6 +908,7 @@ export function finishComponentSetup(
         }
 
         // #tim-core
+        // 用户没有定义 render 就通过编译 template 生成 render
         Component.render = compile(template, finalCompilerOptions)
         if (__DEV__) {
           endMeasure(instance, `compile`)

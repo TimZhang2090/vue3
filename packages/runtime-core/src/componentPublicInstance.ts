@@ -424,6 +424,7 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
     value: any
   ): boolean {
     const { data, setupState, ctx } = instance
+
     if (hasSetupBinding(setupState, key)) {
       setupState[key] = value
       return true
@@ -438,9 +439,12 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
       data[key] = value
       return true
     } else if (hasOwn(instance.props, key)) {
+      // #tim 对 prop 赋值，收到警告
       __DEV__ && warn(`Attempting to mutate prop "${key}". Props are readonly.`)
       return false
     }
+
+    // #tim 对保留属性赋值，收到警告
     if (key[0] === '$' && key.slice(1) in instance) {
       __DEV__ &&
         warn(
@@ -456,9 +460,11 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
           value
         })
       } else {
+        // #tim 比如在 created 钩子中定义的，非响应式数据 this.foo = 'bar'
         ctx[key] = value
       }
     }
+
     return true
   },
 
