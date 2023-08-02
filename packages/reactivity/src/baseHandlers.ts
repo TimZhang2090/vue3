@@ -145,6 +145,9 @@ function createGetter(isReadonly = false, shallow = false) {
       return targetIsArray && isIntegerKey(key) ? res : res.value
     }
 
+    // #tim 递归对数据进行响应式处理：reactive(res)
+    // 不同于 vue2 是在初始化阶段就对 data 下数据做全覆盖的深度 响应式处理
+    // vue3 这里，是在对象属性被访问时，才递归处理子对象
     if (isObject(res)) {
       // Convert returned value into a proxy as well. we do the isObject check
       // here to avoid invalid value warning. Also need to lazy access readonly

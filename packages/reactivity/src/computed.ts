@@ -41,12 +41,16 @@ export class ComputedRefImpl<T> {
     isReadonly: boolean,
     isSSR: boolean
   ) {
+    // #tim 包装传入的 getter 函数，生成包装后的副作用函数
     this.effect = new ReactiveEffect(getter, () => {
+      // #tim 定义特殊的 scheduler
+      // 数据有变化，在此时机，我们要让 计算属性的缓存 失效
       if (!this._dirty) {
         this._dirty = true
         triggerRefValue(this)
       }
     })
+
     this.effect.computed = this
     this.effect.active = this._cacheable = !isSSR
     this[ReactiveFlags.IS_READONLY] = isReadonly
@@ -55,11 +59,16 @@ export class ComputedRefImpl<T> {
   get value() {
     // the computed ref may get wrapped by other proxies e.g. readonly() #3376
     const self = toRaw(this)
+
+    // #tim 手动收集 依赖 计算属性 的副作用函数
     trackRefValue(self)
+
+    // #tim "脏"时才进行重新计算
     if (self._dirty || !self._cacheable) {
       self._dirty = false
       self._value = self.effect.run()!
     }
+
     return self._value
   }
 

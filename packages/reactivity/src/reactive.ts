@@ -252,12 +252,14 @@ function createReactiveObject(
   collectionHandlers: ProxyHandler<any>,
   proxyMap: WeakMap<Target, any>
 ) {
+  // #tim 必须是对象或数组，原始数据类型用 reactive 处理不了
   if (!isObject(target)) {
     if (__DEV__) {
       console.warn(`value cannot be made reactive: ${String(target)}`)
     }
     return target
   }
+
   // target is already a Proxy, return it.
   // exception: calling readonly() on a reactive object
   if (
@@ -276,11 +278,14 @@ function createReactiveObject(
   if (targetType === TargetType.INVALID) {
     return target
   }
+
+  // #tim 核心
   const proxy = new Proxy(
     target,
     targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers
   )
   proxyMap.set(target, proxy)
+
   return proxy
 }
 
