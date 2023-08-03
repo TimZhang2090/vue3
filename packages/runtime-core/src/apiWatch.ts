@@ -327,6 +327,8 @@ function doWatch(
         if (cleanup) {
           cleanup()
         }
+
+        // #tim 看第四个数组参数，给 cb 传入 3 个参数：新值、旧值、使过期函数
         callWithAsyncErrorHandling(cb, instance, ErrorCodes.WATCH_CALLBACK, [
           newValue,
           // pass undefined as the old value when it's changed for the first time
@@ -337,6 +339,8 @@ function doWatch(
             : oldValue,
           onCleanup
         ])
+
+        // #tim 新值变旧值，为下次做准备
         oldValue = newValue
       }
     } else {
@@ -373,6 +377,7 @@ function doWatch(
     if (immediate) {
       job()
     } else {
+      // #tim 初次执行，得到是 旧值
       oldValue = effect.run()
     }
   } else if (flush === 'post') {

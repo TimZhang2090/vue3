@@ -259,6 +259,7 @@ function checkRecursiveUpdates(seen: CountMap, fn: SchedulerJob) {
     seen.set(fn, 1)
   } else {
     const count = seen.get(fn)!
+
     if (count > RECURSION_LIMIT) {
       const instance = fn.ownerInstance
       const componentName = instance && getComponentName(instance.type)
