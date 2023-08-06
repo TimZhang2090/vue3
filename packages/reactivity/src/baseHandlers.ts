@@ -136,6 +136,7 @@ function createGetter(isReadonly = false, shallow = false) {
       track(target, TrackOpTypes.GET, key)
     }
 
+    // #tim 浅响应，直接返回
     if (shallow) {
       return res
     }
@@ -148,6 +149,10 @@ function createGetter(isReadonly = false, shallow = false) {
     // #tim 递归对数据进行响应式处理：reactive(res)
     // 不同于 vue2 是在初始化阶段就对 data 下数据做全覆盖的深度 响应式处理
     // vue3 这里，是在对象属性被访问时，才递归处理子对象
+
+    // readonly(res) 做深度只读，属性的属性亦不可修改
+    // reactive(res) 做深度响应式处理
+
     if (isObject(res)) {
       // Convert returned value into a proxy as well. we do the isObject check
       // here to avoid invalid value warning. Also need to lazy access readonly
@@ -203,12 +208,16 @@ function createSetter(shallow = false) {
 
     const hadKey =
       isArray(target) && isIntegerKey(key)
-        ? Number(key) < target.length
+        ? // #tim 代理的如果是数组，只有修改的索引小于当前数组长度，被视为 SET 更新操作
+          // 大于等于，被视为 ADD 操作，因为其会隐式改变 length 属性值
+          // 注意：index + 1 = length
+          Number(key) < target.length
         : hasOwn(target, key)
 
     const result = Reflect.set(target, key, value, receiver)
 
     // #tim 屏蔽由原型对象的属性变化导致的更新
+    // 详见霍春阳：5.4 合理的触发响应
     // don't trigger if target is something up in the prototype chain of original
     if (target === toRaw(receiver)) {
       if (!hadKey) {

@@ -24,6 +24,7 @@ export function provide<T, K = InjectionKey<T> | string | number>(
     const parentProvides =
       currentInstance.parent && currentInstance.parent.provides
     if (parentProvides === provides) {
+      // #tim 形成 provides 原型链
       provides = currentInstance.provides = Object.create(parentProvides)
     }
     // TS doesn't allow symbol as index type

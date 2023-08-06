@@ -326,6 +326,7 @@ export function trigger(
   } else if (key === 'length' && isArray(target)) {
     const newLength = Number(newValue)
     depsMap.forEach((dep, key) => {
+      // #tim 修改 length 属性时，只有那些索引值大于等于新 length 属性值的元素才需要触发响应
       if (key === 'length' || key >= newLength) {
         deps.push(dep)
       }
@@ -346,6 +347,8 @@ export function trigger(
             deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
           }
         } else if (isIntegerKey(key)) {
+          // #tim 修改数组索引（大于等于原length）时，也隐式修改 length，
+          // 所以 length 相关副作用函数也需要触发
           // new index added to array -> length changes
           deps.push(depsMap.get('length'))
         }
@@ -422,6 +425,7 @@ function triggerEffect(
     if (__DEV__ && effect.onTrigger) {
       effect.onTrigger(extend({ effect }, debuggerEventExtraInfo))
     }
+
     if (effect.scheduler) {
       effect.scheduler()
     } else {
