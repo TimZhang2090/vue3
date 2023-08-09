@@ -268,11 +268,14 @@ function createReactiveObject(
   ) {
     return target
   }
+
+  // #tim 寻找缓存的代理对象
   // target already has corresponding Proxy
   const existingProxy = proxyMap.get(target)
   if (existingProxy) {
     return existingProxy
   }
+
   // only specific value types can be observed.
   const targetType = getTargetType(target)
   if (targetType === TargetType.INVALID) {
@@ -284,6 +287,8 @@ function createReactiveObject(
     target,
     targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers
   )
+
+  // #tim 缓存代理对象
   proxyMap.set(target, proxy)
 
   return proxy

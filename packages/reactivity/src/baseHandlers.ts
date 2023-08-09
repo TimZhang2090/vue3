@@ -59,9 +59,11 @@ function createArrayInstrumentations() {
   ;(['includes', 'indexOf', 'lastIndexOf'] as const).forEach(key => {
     instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
       const arr = toRaw(this) as any
+
       for (let i = 0, l = this.length; i < l; i++) {
         track(arr, TrackOpTypes.GET, i + '')
       }
+
       // we run the method using the original args first (which may be reactive)
       const res = arr[key](...args)
       if (res === -1 || res === false) {
@@ -72,6 +74,18 @@ function createArrayInstrumentations() {
       }
     }
   })
+
+  // #tim 这些方法会隐式 get 和 set length 属性
+  // 如果有两个用到这些方法的副作用函数同时存在，就会引发无限循环：
+  // effect(()=>{
+  //   arr.push(1)
+  // })
+  // effect(()=>{
+  //   arr.push(2)
+  // })
+  // 且，push 等操作本质是更新操作，无需对 length 的变化做出响应（重新 push 等）
+  // 所以在这些方法的调用前暂停依赖收集，调用后恢复依赖收集
+
   // instrument length-altering mutation methods to avoid length being tracked
   // which leads to infinite loops in some cases (#2137)
   ;(['push', 'pop', 'shift', 'unshift', 'splice'] as const).forEach(key => {
@@ -118,7 +132,11 @@ function createGetter(isReadonly = false, shallow = false) {
     const targetIsArray = isArray(target)
 
     if (!isReadonly) {
+      // #tim arr.includes 可以理解为读取代理对象 arr 的 includes 属性，所以它会触发 get 的拦截
       if (targetIsArray && hasOwn(arrayInstrumentations, key)) {
+        // #tim Reflect.get 的第一个参数如果是函数，常见的比如是一个 getter 函数，
+        // 像这里，它是一个我们重写过的，比如 includes 函数，
+        // 是函数则执行它，获取返回值
         return Reflect.get(arrayInstrumentations, key, receiver)
       }
       if (key === 'hasOwnProperty') {
@@ -249,6 +267,7 @@ function has(target: object, key: string | symbol): boolean {
 }
 
 function ownKeys(target: object): (string | symbol)[] {
+  // #tim for...in 也可以遍历数组，所以对于数组，此时 track 的 key 是 'length'
   track(target, TrackOpTypes.ITERATE, isArray(target) ? 'length' : ITERATE_KEY)
   return Reflect.ownKeys(target)
 }
