@@ -144,6 +144,7 @@ class RefImpl<T> {
   }
 
   get value() {
+    // #tim 在我们创建的对象的访问器属性 get 中做 track
     trackRefValue(this)
     return this._value
   }

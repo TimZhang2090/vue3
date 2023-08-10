@@ -107,6 +107,7 @@ export class ReactiveEffect<T = any> {
       if (effectTrackDepth <= maxMarkerBits) {
         initDepMarkers(this)
       } else {
+        // #tim 每次都先做依赖移除，以避免 无效依赖遗留 的问题
         cleanupEffect(this)
       }
       return this.fn()
@@ -282,7 +283,13 @@ export function trackEffects(
 
   if (shouldTrack) {
     dep.add(activeEffect!)
+
+    // #tim 实现“相互持有”，方便以后清理依赖 cleanup
+    // 避免 无效依赖遗留 的问题
+    // 条件分支切换问题：
+    // obj.ok ? obj.text : 'not'
     activeEffect!.deps.push(dep)
+
     if (__DEV__ && activeEffect!.onTrack) {
       activeEffect!.onTrack(
         extend(

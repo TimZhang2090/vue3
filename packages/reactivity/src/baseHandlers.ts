@@ -146,6 +146,8 @@ function createGetter(isReadonly = false, shallow = false) {
 
     const res = Reflect.get(target, key, receiver)
 
+    // #tim 内建 Symbol 属性不收集依赖
+    // __proto__,__v_isRef,__isVue 几个特殊属性不收集依赖
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res
     }
