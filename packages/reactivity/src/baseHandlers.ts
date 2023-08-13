@@ -134,8 +134,9 @@ function createGetter(isReadonly = false, shallow = false) {
     if (!isReadonly) {
       // #tim arr.includes 可以理解为读取代理对象 arr 的 includes 属性，所以它会触发 get 的拦截
       if (targetIsArray && hasOwn(arrayInstrumentations, key)) {
-        // #tim Reflect.get 的第一个参数如果是函数，常见的比如是一个 getter 函数，
-        // 像这里，它是一个我们重写过的，比如 includes 函数，
+        // #tim 通过 Reflect.get 的第一个参数和第二个参数 targe.key 得到的如果是函数，
+        // 常见的比如是一个 getter 函数，
+        // 这里，它是一个我们重写过的，比如 includes 函数，
         // 是函数则执行它，获取返回值
         return Reflect.get(arrayInstrumentations, key, receiver)
       }

@@ -350,7 +350,9 @@ export function trigger(
         if (!isArray(target)) {
           // #tim 属性增，影响 for...in 循环次数
           deps.push(depsMap.get(ITERATE_KEY))
+
           if (isMap(target)) {
+            // #tim 新增键，会修改 Map 的 key，所以取出关联在 MAP_KEY_ITERATE_KEY 下的副作用函数
             deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
           }
         } else if (isIntegerKey(key)) {
@@ -364,13 +366,18 @@ export function trigger(
         if (!isArray(target)) {
           // #tim 属性减，影响 for...in 循环次数
           deps.push(depsMap.get(ITERATE_KEY))
+
           if (isMap(target)) {
+            // #tim 删除键，会修改 Map 的 key，所以取出关联在 MAP_KEY_ITERATE_KEY 下的副作用函数
             deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
           }
         }
         break
       case TriggerOpTypes.SET:
+        // #tim Map 的 forEach 关心 key，也关心 value
         if (isMap(target)) {
+          // #tim 这里就不会取出 MAP_KEY_ITERATE_KEY 下的副作用函数
+          // 因为修改值时，我们不需要和 key 关联的副作用函数重新执行
           deps.push(depsMap.get(ITERATE_KEY))
         }
         break

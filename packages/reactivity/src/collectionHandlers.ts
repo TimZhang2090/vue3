@@ -63,6 +63,8 @@ function has(this: CollectionTypes, key: unknown, isReadonly = false): boolean {
 function size(target: IterableCollections, isReadonly = false) {
   target = (target as any)[ReactiveFlags.RAW]
   !isReadonly && track(toRaw(target), TrackOpTypes.ITERATE, ITERATE_KEY)
+
+  // #tim 注意第三个参数是 原被代理 set 实例
   return Reflect.get(target, 'size', target)
 }
 
@@ -71,6 +73,9 @@ function add(this: SetTypes, value: unknown) {
   const target = toRaw(this)
   const proto = getProto(target)
   const hadKey = proto.has.call(target, value)
+
+  // #tim 已有，即重复，不添加
+  // 只有在 key 不存在的情况下，才需要触发响应
   if (!hadKey) {
     target.add(value)
     trigger(target, TriggerOpTypes.ADD, value, value)
@@ -92,7 +97,12 @@ function set(this: MapTypes, key: unknown, value: unknown) {
   }
 
   const oldValue = get.call(target, key)
+
+  // #tim 注意，这里的 value 已经是 toRaw 的了
+  // 对原始数据执行 set, set 的那个 value 也需要是原始数据
+  // 避免污染原始数据
   target.set(key, value)
+
   if (!hadKey) {
     trigger(target, TriggerOpTypes.ADD, key, value)
   } else if (hasChanged(value, oldValue)) {
@@ -115,6 +125,8 @@ function deleteEntry(this: CollectionTypes, key: unknown) {
   const oldValue = get ? get.call(target, key) : undefined
   // forward the operation before queueing reactions
   const result = target.delete(key)
+
+  // #tim 存在要删除的，才需要触发响应式
   if (hadKey) {
     trigger(target, TriggerOpTypes.DELETE, key, undefined, oldValue)
   }
@@ -152,6 +164,8 @@ function createForEach(isReadonly: boolean, isShallow: boolean) {
       // important: make sure the callback is
       // 1. invoked with the reactive map as `this` and 3rd arg
       // 2. the value received should be a corresponding reactive/readonly.
+      // #tim 手动调用 callback，用 wrap 函数包裹 value 和 key 后再传给 callback()
+      // 这样就实现了深度响应
       return callback.call(thisArg, wrap(value), wrap(key), observed)
     })
   }
@@ -184,13 +198,20 @@ function createIterableMethod(
     const targetIsMap = isMap(rawTarget)
     const isPair =
       method === 'entries' || (method === Symbol.iterator && targetIsMap)
+
+    // #tim 迭代 keys 时，我们只关注 key 的修改与否，对于修改了 值 ，但 键 无变化时，
+    // 我们不希望有响应式联动，比如：
+    // foo.set('key1', 'newVal')，key1 之前就存在
     const isKeyOnly = method === 'keys' && targetIsMap
+
+    // #tim 获取原始迭代器方法
     const innerIterator = target[method](...args)
     const wrap = isShallow ? toShallow : isReadonly ? toReadonly : toReactive
     !isReadonly &&
       track(
         rawTarget,
         TrackOpTypes.ITERATE,
+        // #tim isKeyOnly 时，换了一个新的 Symbol 类型的自定义的响应式关联属性了
         isKeyOnly ? MAP_KEY_ITERATE_KEY : ITERATE_KEY
       )
     // return a wrapped iterator which returns observed versions of the
@@ -198,10 +219,14 @@ function createIterableMethod(
     return {
       // iterator protocol
       next() {
+        // #tim 调用原始迭代器方法的 next 方法获取 value 和 done
         const { value, done } = innerIterator.next()
         return done
           ? { value, done }
           : {
+              // #tim 直接迭代以及迭代 entries 需要返回 键 和 值
+              // 迭代 values 只需要返回 值，此时值是 value
+              // 迭代 keys 只需要返回 值，此时值是 key
               value: isPair ? [wrap(value[0]), wrap(value[1])] : wrap(value),
               done
             }
