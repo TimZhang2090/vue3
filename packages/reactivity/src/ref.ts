@@ -140,7 +140,10 @@ class RefImpl<T> {
   // #tim 打上标记
   public readonly __v_isRef = true
 
-  constructor(value: T, public readonly __v_isShallow: boolean) {
+  constructor(
+    value: T,
+    public readonly __v_isShallow: boolean
+  ) {
     this._rawValue = __v_isShallow ? value : toRaw(value)
     this._value = __v_isShallow ? value : toReactive(value)
   }
