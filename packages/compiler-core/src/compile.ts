@@ -62,6 +62,11 @@ export function baseCompile(
   template: string | RootNode,
   options: CompilerOptions = {}
 ): CodegenResult {
+  // #tim 三件事
+  // 1. 生成 AST
+  // 2. AST transform
+  // 3. generate 渲染函数
+
   const onError = options.onError || defaultOnError
   const isModuleMode = options.mode === 'module'
   /* istanbul ignore if */
@@ -82,6 +87,8 @@ export function baseCompile(
     onError(createCompilerError(ErrorCodes.X_SCOPE_ID_NOT_SUPPORTED))
   }
 
+  // #tim 三件事
+  // 1. 生成 AST
   const ast = isString(template) ? baseParse(template, options) : template
   const [nodeTransforms, directiveTransforms] =
     getBaseTransformPreset(prefixIdentifiers)
@@ -93,6 +100,8 @@ export function baseCompile(
     }
   }
 
+  // #tim 三件事
+  // 2. AST transform
   transform(
     ast,
     extend({}, options, {
@@ -109,6 +118,8 @@ export function baseCompile(
     })
   )
 
+  // #tim 三件事
+  // 3. generate 渲染函数
   return generate(
     ast,
     extend({}, options, {

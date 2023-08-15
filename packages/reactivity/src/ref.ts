@@ -136,6 +136,8 @@ class RefImpl<T> {
   private _rawValue: T
 
   public dep?: Dep = undefined
+
+  // #tim 打上标记
   public readonly __v_isRef = true
 
   constructor(value: T, public readonly __v_isShallow: boolean) {
@@ -342,6 +344,7 @@ class ObjectRefImpl<T extends object, K extends keyof T> {
   ) {}
 
   get value() {
+    // #tim 通过响应式代理对象访问属性
     const val = this._object[this._key]
     return val === undefined ? this._defaultValue! : val
   }

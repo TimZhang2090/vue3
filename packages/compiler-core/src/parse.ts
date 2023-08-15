@@ -105,8 +105,11 @@ export function baseParse(
   content: string,
   options: ParserOptions = {}
 ): RootNode {
+  // #tim 创建解析上下文
   const context = createParserContext(content, options)
   const start = getCursor(context)
+
+  // #tim 解析子节点并生成 AST
   return createRoot(
     parseChildren(context, TextModes.DATA, []),
     getSelection(context, start)
