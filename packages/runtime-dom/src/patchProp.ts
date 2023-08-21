@@ -110,5 +110,6 @@ function shouldSetAsProp(
     return false
   }
 
+  // #tim 用 in 操作符判断 key 是否存在对应 DOM Property
   return key in el
 }

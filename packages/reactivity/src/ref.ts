@@ -140,10 +140,7 @@ class RefImpl<T> {
   // #tim 打上标记
   public readonly __v_isRef = true
 
-  constructor(
-    value: T,
-    public readonly __v_isShallow: boolean
-  ) {
+  constructor(value: T, public readonly __v_isShallow: boolean) {
     this._rawValue = __v_isShallow ? value : toRaw(value)
     this._value = __v_isShallow ? value : toReactive(value)
   }
@@ -239,6 +236,7 @@ export function toValue<T>(source: MaybeRefOrGetter<T>): T {
 }
 
 const shallowUnwrapHandlers: ProxyHandler<any> = {
+  // #tim 自动脱 ref; unref 返回了 ref.value，让我们在模板中不用再写 .value 了
   get: (target, key, receiver) => unref(Reflect.get(target, key, receiver)),
   set: (target, key, value, receiver) => {
     const oldValue = target[key]

@@ -370,6 +370,8 @@ function baseCreateRenderer(
       return
     }
 
+    // #tim 新旧是不同类型的节点(不同的 html 标签或组件)
+    // 则直接卸载旧的节点，然后把 n1 = null，之后重新挂载新的节点
     // patching & not same type, unmount old tree
     if (n1 && !isSameVNodeType(n1, n2)) {
       anchor = getNextHostNode(n1)
@@ -588,6 +590,7 @@ function baseCreateRenderer(
   ) => {
     isSVG = isSVG || n2.type === 'svg'
     if (n1 == null) {
+      // #tim 直接挂载
       mountElement(
         n2,
         container,
@@ -599,6 +602,7 @@ function baseCreateRenderer(
         optimized
       )
     } else {
+      // #tim 更新
       patchElement(
         n1,
         n2,

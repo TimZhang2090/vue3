@@ -1,0 +1,26 @@
+<div id="app"></div>
+
+<script src="../../../reactivity/dist/reactivity.global.js"></script>
+<script>
+
+const { effect, ref } = VueReactivity
+
+function renderer(domString, container) {
+  container.innerHTML = domString
+}
+
+const count = ref(1)
+
+effect(() => {
+  // 一个最简单的 renderer 渲染器
+//   它和响应式数据结合了
+  renderer(`<h1>${count.value}</h1>`, document.getElementById('app'))
+})
+
+setTimeout(() => {
+    count.value++
+}, 1000);
+
+
+
+</script>
