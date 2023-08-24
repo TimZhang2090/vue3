@@ -90,6 +90,8 @@ export function baseCompile(
   // #tim 三件事
   // 1. 生成 AST
   const ast = isString(template) ? baseParse(template, options) : template
+
+  // #tim 获取节点和指令转换的方法
   const [nodeTransforms, directiveTransforms] =
     getBaseTransformPreset(prefixIdentifiers)
 

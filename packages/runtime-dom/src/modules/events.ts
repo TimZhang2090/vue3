@@ -42,6 +42,10 @@ export function patchEvent(
   const existingInvoker = invokers[rawName]
   if (nextValue && existingInvoker) {
     // patch
+    // #tim 更新 事件绑定函数
+    // invoker 的作用就在这体现了
+    // 不用 removeEventListener 再 addEventListener
+    // 而是直接更新 value 即可
     existingInvoker.value = nextValue
   } else {
     const [name, options] = parseName(rawName)
@@ -100,6 +104,33 @@ function createInvoker(
     if (!e._vts) {
       e._vts = Date.now()
     } else if (e._vts <= invoker.attached) {
+      // 事件冒泡到父节点，可能会在副作用函数重新执行之后
+      // 会导致比如下面这个例子中，父节点的 Click 事件本不该被触发，却被触发的情况
+
+      // bol 初始值为 false,父节点上应该没有事件被绑定
+      // const bol = ref(false)
+
+      // const vnode = {
+      //   type: 'div',
+      //   props: bol.value ? {
+      //     onClick: () => {
+      //       alert('父元素 clicked')
+      //     }
+      //   } : {},
+      //   children: [
+      //     {
+      //       type: 'p',
+      //       props: {
+      //         onClick: () => {
+      //           bol.value = true
+      //         }
+      //       },
+      //       children: 'text'
+      //     }
+      //   ]
+      // }
+
+      // 所以，如果事件发生的时间早于事件处理函数绑定的时间，则不执行
       return
     }
     callWithAsyncErrorHandling(
@@ -109,8 +140,12 @@ function createInvoker(
       [e]
     )
   }
+
   invoker.value = initialValue
+
+  // #tim 加上事件绑定时的高精时间戳
   invoker.attached = getNow()
+
   return invoker
 }
 

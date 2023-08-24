@@ -111,6 +111,7 @@ export function baseParse(
 
   // #tim 解析子节点并生成 AST
   return createRoot(
+    // #tim 传入第三个参数 ancestors 是一个数组，即一个 栈 结构
     parseChildren(context, TextModes.DATA, []),
     getSelection(context, start)
   )
@@ -152,6 +153,8 @@ function parseChildren(
   const ns = parent ? parent.ns : Namespaces.HTML
   const nodes: TemplateChildNode[] = []
 
+  // #tim 自定向下分析模板，生成 token 的同时，也构建出了下一层的 nodes 即 AST
+  // 会通过 advanceBy 不断把处理过的模板中的字符截取掉，向前进
   while (!isEnd(context, mode, ancestors)) {
     __TEST__ && assert(context.source.length > 0)
     const s = context.source
@@ -159,15 +162,18 @@ function parseChildren(
 
     if (mode === TextModes.DATA || mode === TextModes.RCDATA) {
       if (!context.inVPre && startsWith(s, context.options.delimiters[0])) {
+        // #tim 处理 {{ }} 插值代码
         // '{{'
         node = parseInterpolation(context, mode)
       } else if (mode === TextModes.DATA && s[0] === '<') {
+        // #tim 以 < 结尾，报错
         // https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state
         if (s.length === 1) {
           emitError(context, ErrorCodes.EOF_BEFORE_TAG_NAME, 1)
         } else if (s[1] === '!') {
           // https://html.spec.whatwg.org/multipage/parsing.html#markup-declaration-open-state
           if (startsWith(s, '<!--')) {
+            // #tim 注释节点
             node = parseComment(context)
           } else if (startsWith(s, '<!DOCTYPE')) {
             // Ignore DOCTYPE by a limitation.
@@ -184,6 +190,8 @@ function parseChildren(
             node = parseBogusComment(context)
           }
         } else if (s[1] === '/') {
+          // #tim 各种“结束”错误的处理
+
           // https://html.spec.whatwg.org/multipage/parsing.html#end-tag-open-state
           if (s.length === 2) {
             emitError(context, ErrorCodes.EOF_BEFORE_TAG_NAME, 2)
@@ -204,6 +212,7 @@ function parseChildren(
             node = parseBogusComment(context)
           }
         } else if (/[a-z]/i.test(s[1])) {
+          // #tim 解析标签元素节点
           node = parseElement(context, ancestors)
 
           // 2.x <template> with no directive compat
@@ -242,6 +251,7 @@ function parseChildren(
       }
     }
     if (!node) {
+      // #tim 普通文本的解析
       node = parseText(context, mode)
     }
 
@@ -254,6 +264,7 @@ function parseChildren(
     }
   }
 
+  // #tim 空白字符串的管理
   // Whitespace handling strategy like v2
   let removedWhitespace = false
   if (mode !== TextModes.RAWTEXT && mode !== TextModes.RCDATA) {
@@ -322,6 +333,7 @@ function parseChildren(
 }
 
 function pushNode(nodes: TemplateChildNode[], node: TemplateChildNode): void {
+  // #tim 连续的文本节点做合并
   if (node.type === NodeTypes.TEXT) {
     const prev = last(nodes)
     // Merge if both this and the previous node are text and those are
@@ -380,12 +392,16 @@ function parseComment(context: ParserContext): CommentNode {
     if (match[1]) {
       emitError(context, ErrorCodes.INCORRECTLY_CLOSED_COMMENT)
     }
+
+    // #tim 获取注释内容
     content = context.source.slice(4, match.index)
 
     // Advancing with reporting nested comments.
     const s = context.source.slice(0, match.index)
     let prevIndex = 1,
       nestedIndex = 0
+
+    // #tim 判断注释嵌套情况，存在即报错
     while ((nestedIndex = s.indexOf('<!--', prevIndex)) !== -1) {
       advanceBy(context, nestedIndex - prevIndex + 1)
       if (nestedIndex + 4 < s.length) {
@@ -436,10 +452,12 @@ function parseElement(
   const wasInPre = context.inPre
   const wasInVPre = context.inVPre
   const parent = last(ancestors)
+  // #tim 生成一个标签节点
   const element = parseTag(context, TagType.Start, parent)
   const isPreBoundary = context.inPre && !wasInPre
   const isVPreBoundary = context.inVPre && !wasInVPre
 
+  // #tim 自闭合标签直接返回
   if (element.isSelfClosing || context.options.isVoidTag(element.tag)) {
     // #4030 self-closing <pre> tag
     if (isPreBoundary) {
@@ -454,6 +472,8 @@ function parseElement(
   // Children.
   ancestors.push(element)
   const mode = context.options.getTextMode(element, parent)
+
+  // #tim 递归调用 parseChildren
   const children = parseChildren(context, mode, ancestors)
   ancestors.pop()
 
@@ -992,6 +1012,7 @@ function parseInterpolation(
   }
 
   const start = getCursor(context)
+  // #tim 前进到开始分隔符后
   advanceBy(context, open.length)
   const innerStart = getCursor(context)
   const innerEnd = getCursor(context)
@@ -1006,6 +1027,8 @@ function parseInterpolation(
   const endOffset =
     rawContentLength - (preTrimContent.length - content.length - startOffset)
   advancePositionWithMutation(innerEnd, rawContent, endOffset)
+
+  // #tim 前进到结束分隔符后
   advanceBy(context, close.length)
 
   return {

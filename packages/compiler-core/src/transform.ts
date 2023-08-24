@@ -318,9 +318,12 @@ export function createTransformContext(
 export function transform(root: RootNode, options: TransformOptions) {
   const context = createTransformContext(root, options)
   traverseNode(root, context)
+
+  // #tim 静态提升
   if (options.hoistStatic) {
     hoistStatic(root, context)
   }
+
   if (!options.ssr) {
     createRootCodegen(root, context)
   }
@@ -414,7 +417,10 @@ export function traverseNode(
   // apply transform plugins
   const { nodeTransforms } = context
   const exitFns = []
+
+  // #tim 每个 转换 走一遍
   for (let i = 0; i < nodeTransforms.length; i++) {
+    // #tim 退出时机执行，即处理完子节点后再执行，因为其处理逻辑依赖处理子节点后的结果
     const onExit = nodeTransforms[i](node, context)
     if (onExit) {
       if (isArray(onExit)) {

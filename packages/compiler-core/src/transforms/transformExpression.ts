@@ -49,8 +49,31 @@ const isLiteralWhitelisted = /*#__PURE__*/ makeMap('true,false,null,this')
 // likely function invocation and member access
 const constantBailRE = /\w\s*\(|\.[^\d]/
 
+// #tim 核心任务是：转换插值和元素指令中的动态表达式
+// {{ foo + bar}}
+// 原：content: "foo + bar"
+// 处理后(省略了很多属性)：
+// content: {
+//   children: [
+//     {
+//       type: 4,
+//       content: "_ctx.foo",
+//     }
+//     "+",
+//     {
+//       type: 4,
+//       content: "_ctx.bar",
+//     }
+//   ]
+// }
+
+// 不同于 vue2，其中有 _ctx
+// vue2: with(this) {return _s(foo + bar)}
+
 export const transformExpression: NodeTransform = (node, context) => {
   if (node.type === NodeTypes.INTERPOLATION) {
+    // #tim 既然是解析 JS 的表达式，就涉及到对 JS 代码的解析
+    // processExpression 内部依赖了 @babel/parser; 见：ast = parse(source
     node.content = processExpression(
       node.content as SimpleExpressionNode,
       context

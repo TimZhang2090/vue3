@@ -230,6 +230,7 @@ export interface VNode<
 // structure would be stable. This allows us to skip most children diffing
 // and only worry about the dynamic nodes (indicated by patch flags).
 export const blockStack: (VNode[] | null)[] = []
+// #tim 用于存储动态节点，最终会赋给 dynamicChildren
 export let currentBlock: VNode[] | null = null
 
 /**
