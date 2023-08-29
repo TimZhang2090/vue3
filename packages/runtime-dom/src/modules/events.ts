@@ -106,6 +106,7 @@ function createInvoker(
     } else if (e._vts <= invoker.attached) {
       // 事件冒泡到父节点，可能会在副作用函数重新执行之后
       // 会导致比如下面这个例子中，父节点的 Click 事件本不该被触发，却被触发的情况
+      // 因为副作用函数先执行，父节点绑定了回调函数，在此之后，之前点击子节点的事件冒泡到了父节点
 
       // bol 初始值为 false,父节点上应该没有事件被绑定
       // const bol = ref(false)

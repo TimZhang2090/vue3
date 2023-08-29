@@ -782,6 +782,7 @@ export function normalizeChildren(vnode: VNode, children: unknown) {
       }
       return
     } else {
+      // #tim 插槽
       type = ShapeFlags.SLOTS_CHILDREN
       const slotFlag = (children as RawSlots)._
       if (!slotFlag && !(InternalObjectKey in children!)) {
